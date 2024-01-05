@@ -150,9 +150,7 @@ def test(message):
     load_from_json()
     user_id = str(message.from_user.id)
     user = check_user(message)
-    if user:
-        pass
-    else:
+    if not user:
         start_test(message)
         return
     question_number = user_data[user_id]['question_number']
@@ -195,9 +193,7 @@ def test(message):
 def back_to_main_menu(message):
     load_from_json()
     user = check_user(message)
-    if user:
-        pass
-    else:
+    if not user:
         start_test(message)
         return
 
@@ -213,9 +209,7 @@ def question_before(message):
     load_from_json()
     user_id = str(message.from_user.id)
     user = check_user(message)
-    if user:
-        pass
-    else:
+    if not user:
         start_test(message)
         return
     question_number = user_data[user_id]['question_number']
@@ -240,9 +234,7 @@ def question_before(message):
 def carry_on(message):
     load_from_json()
     user = check_user(message)
-    if user:
-        pass
-    else:
+    if not user:
         start_test(message)
         return
     user_id = str(message.from_user.id)
@@ -261,9 +253,7 @@ def to_result(message):
     load_from_json()
     user_id = str(message.from_user.id)
     user = check_user(message)
-    if user:
-        pass
-    else:
+    if not user:
         start_test(message)
         return
     if user_data[user_id]['result']:
