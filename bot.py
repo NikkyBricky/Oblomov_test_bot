@@ -1,3 +1,4 @@
+# ----------------------------------------------------ИМПОРТЫ-----------------------------------------------------------
 import telebot
 from telebot.types import ReplyKeyboardMarkup
 from dotenv import load_dotenv
@@ -5,12 +6,13 @@ import os
 import random
 import json
 
-
+# --------------------------------------------------ПОЛУЧЕНИЕ ТОКЕНА----------------------------------------------------
 load_dotenv()
 token = os.getenv('TOKEN')
 bot = telebot.TeleBot(token=token)
 
 
+# --------------------------------------------------ПРИВЕТСТВИЕ/ПРОЩАНИЕ------------------------------------------------
 def check_greet(message):
     greet = ['привет', 'прив', 'приветствую', 'здравствуйте', 'здравствуй', 'йоу', 'hello', 'hi']
     for i in greet:
@@ -52,12 +54,11 @@ def farewell(message):
     bye = (f'До встречи, {message.from_user.first_name}! Если захотите еще раз услышать об интересных людях, '
            f'я всегда к вашим услугам.')
     bot.send_message(message.chat.id, bye)
-# ----------------------------------------------------------------------------------------------------------------------
 
 
+# -----------------------------------------------------JSON-------------------------------------------------------------
 with open('my_questionnaire.json', 'r', encoding='utf8') as file:
     questionnaire = json.load(file)
-question_number = 1
 
 
 def save_to_json():
@@ -78,6 +79,7 @@ def load_from_json():
 user_data = load_from_json()
 
 
+# ------------------------------------------------------ЗАПУСК БОТА-----------------------------------------------------
 @bot.message_handler(commands=['start'])
 def starting(message):
     load_from_json()
@@ -90,6 +92,7 @@ def starting(message):
         save_to_json()
 
 
+# ---------------------------------------------НАЧАЛО ТЕСТИРОВАНИЯ------------------------------------------------------
 @bot.message_handler(content_types=['text'], func=lambda message:  'начать тестирование' in message.text.lower() or
                      'начать сначала' in message.text.lower())
 def start_test(message):
@@ -104,14 +107,14 @@ def start_test(message):
     except KeyError:
         make_params_to_start(message)
 
-    keyboard = check_keyboard(message)
-    question = questionnaire[str(user_data[user_id]['question_number'])]['question']
-    quest_num = user_data[user_id]['question_number']
-    bot.send_message(message.chat.id, f'Вопрос №{quest_num}\n\n {question}',
+    keyboard = check_answers_keyboard(message)
+    question_number = user_data[user_id]['question_number']
+    question = questionnaire[str(question_number)]['question']
+    bot.send_message(message.chat.id, f'Вопрос №{question_number}\n\n {question}',
                      reply_markup=keyboard)
 
 
-def make_params_to_start(message):
+def make_params_to_start(message):  # так как параметров вышло много, решил перенести их в отдельную функцию
     load_from_json()
     user_id = str(message.from_user.id)
     user_data[user_id]['question_number'] = 1
@@ -126,12 +129,14 @@ def make_params_to_start(message):
     save_to_json()
 
 
+# -----------------------------------------------ЛОГИКА ТЕСТИРОВАНИЯ----------------------------------------------------
 @bot.message_handler(content_types=['text'], func=lambda message: message.text.isdigit())
 def test(message):
     load_from_json()
     user_id = str(message.from_user.id)
+    question_number = user_data[user_id]['question_number']
     answers = []
-    for key in questionnaire[str(user_data[user_id]['question_number'])].keys():
+    for key in questionnaire[str(question_number)].keys():
         if 'value' in key:
             answers.append(key[5])
     if user_data[user_id]['test_is_on']:
@@ -140,16 +145,16 @@ def test(message):
         else:
 
             ans = message.text
-            user_data[user_id]['answers'][f'quest{user_data[user_id]['question_number']}'] = ans
-            value = questionnaire[str(user_data[user_id]['question_number'])][f'value{ans}']
+            user_data[user_id]['answers'][f'quest{question_number}'] = ans
+            value = questionnaire[str(question_number)][f'value{ans}']
             user_data[user_id]['values'][value] += 1
             save_to_json()
-            user_data[user_id]['question_number'] += 1
-            if user_data[user_id]['question_number'] <= len(list(questionnaire.keys())):
-                keyboard = check_keyboard(message)
-                question = questionnaire[str(user_data[user_id]['question_number'])]['question']
-                quest_num = user_data[user_id]['question_number']
-                bot.send_message(message.chat.id, f'Вопрос №{quest_num}\n\n {question}',
+            question_number += 1
+            if question_number <= len(list(questionnaire.keys())):
+                user_data[user_id]['question_number'] = question_number
+                keyboard = check_answers_keyboard(message)
+                question = questionnaire[str(question_number)]['question']
+                bot.send_message(message.chat.id, f'Вопрос №{question_number}\n\n {question}',
                                  reply_markup=keyboard)
                 save_to_json()
             else:
@@ -161,7 +166,7 @@ def test(message):
     else:
         bot.send_message(message.chat.id, 'Я пока не знаю, как работать с такой формулировкой сообщения.\n'
                                           'Если хотите пройти мой тест, то смело жмите на кнопку '
-                                          '"Начать тестирование" или, если Вы уже проходили мой тест ранее, '
+                                          '"Начать тестирование" или, если Вы уже проходили этот тест ранее, '
                                           'нажмите "Начать сначала"')
 
 
@@ -179,15 +184,18 @@ def back_to_main_menu(message):
 def question_before(message):
     load_from_json()
     user_id = str(message.from_user.id)
+    question_number = user_data[user_id]['question_number']
     if user_data[user_id]['test_is_on']:
-        if user_data[user_id]['question_number'] != 1:
-            ans = user_data[user_id]['answers'][f'quest{user_data[user_id]['question_number'] - 1}']
-            value = questionnaire[str(user_data[user_id]['question_number'])][f'value{ans}']
-            user_data[user_id]['values'][value] -= 1
+        if question_number != 1:
+            question_number -= 1  # переходим к предыдущему вопросу
+            user_data[user_id]['question_number'] = question_number
+            ans = user_data[user_id]['answers'][f'quest{question_number}']  # находим ответ на предыдущий вопрос
+            value = questionnaire[str(question_number)][f'value{ans}']  # находим значение этого ответа
+            user_data[user_id]['values'][value] -= 1  # удаляем это значение
 
-            user_data[user_id]['question_number'] = user_data[user_id]['question_number'] - 1
-            keyboard = check_keyboard(message)
-            bot.send_message(message.chat.id, questionnaire[str(user_data[user_id]['question_number'])]['question'],
+            keyboard = check_answers_keyboard(message)
+            question = questionnaire[str(question_number)]['question']
+            bot.send_message(message.chat.id, f'Вопрос №{question_number}\n\n {question}',
                              reply_markup=keyboard)
             save_to_json()
         else:
@@ -198,13 +206,15 @@ def question_before(message):
 def carry_on(message):
     load_from_json()
     user_id = str(message.from_user.id)
+    question_number = user_data[user_id]['question_number']
     user_data[user_id]['test_is_on'] = True
-    keyboard = check_keyboard(message)
-    bot.send_message(message.chat.id, questionnaire[str(user_data[user_id]['question_number'])]['question'],
+    keyboard = check_answers_keyboard(message)
+    bot.send_message(message.chat.id, questionnaire[str(question_number)]['question'],
                      reply_markup=keyboard)
     save_to_json()
 
 
+# ------------------------------------------------ВЫВОД РЕЗУЛЬТАТА------------------------------------------------------
 @bot.message_handler(content_types=['text'], func=lambda message: 'мой результат' in message.text.lower())
 def to_result(message):
     load_from_json()
@@ -412,10 +422,11 @@ def to_result(message):
 def answer_to_all(message):
     bot.send_message(message.chat.id, 'Я пока не знаю, как работать с такой формулировкой сообщения.\n'
                                       'Если хотите пройти мой тест, то смело жмите на кнопку "Начать тестирование" или,'
-                                      ' если Вы уже проходили мой тест ранее, нажмите "Начать сначала"')
+                                      ' если Вы уже проходили этот тест ранее, нажмите "Начать сначала"')
 
 
-def check_keyboard(message):
+# --------------------------------------------------КЛАВИАТУРЫ----------------------------------------------------------
+def check_answers_keyboard(message):
     user_id = str(message.from_user.id)
     if user_data[user_id]['question_number'] == 1:
         markup = ReplyKeyboardMarkup(resize_keyboard=True, row_width=4).add('1', '2', '3', '4',
@@ -440,4 +451,4 @@ def check_main_menu_keyboard(message):
     return markup
 
 
-bot.infinity_polling()
+bot.infinity_polling()  # запуск бота
