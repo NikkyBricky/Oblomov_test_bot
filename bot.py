@@ -144,13 +144,13 @@ def test(message):
             bot.send_message(message.chat.id, 'Нет такого ответа. Попробуй снова.')
         else:
 
-            ans = message.text
-            user_data[user_id]['answers'][f'quest{question_number}'] = ans
-            value = questionnaire[str(question_number)][f'value{ans}']
-            user_data[user_id]['values'][value] += 1
+            ans = message.text  # получаем ответ на вопрос
+            user_data[user_id]['answers'][f'quest{question_number}'] = ans  # сохраняем ответ
+            value = questionnaire[str(question_number)][f'value{ans}']  # получаем значение ответа
+            user_data[user_id]['values'][value] += 1  # прибавляем балл к шкале соответствующей полученному значению
             save_to_json()
-            question_number += 1
-            if question_number <= len(list(questionnaire.keys())):
+            question_number += 1  # переходим к следующему вопросу
+            if question_number <= len(questionnaire.keys()):
                 user_data[user_id]['question_number'] = question_number
                 keyboard = check_answers_keyboard(message)
                 question = questionnaire[str(question_number)]['question']
@@ -158,7 +158,7 @@ def test(message):
                                  reply_markup=keyboard)
                 save_to_json()
             else:
-                user_data[user_id]['question_number'] -= 1
+
                 user_data[user_id]['test_is_on'] = False
                 user_data[user_id]['result'] = True
                 save_to_json()
