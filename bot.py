@@ -86,13 +86,17 @@ user_data = load_from_json()
 @bot.message_handler(commands=['start'])
 def starting(message):
     load_from_json()
+    bot.send_chat_action(message.chat.id, action='typing')
+    time.sleep(2)
+    bot.send_chat_action(message.chat.id, action='upload_photo')
+    time.sleep(2)
     keyboard = check_main_menu_keyboard(message)
     greet = 'Привет! Я бот, который умеет определять, кто ты из романа И. А. Гончарова "Обломов". Начнем?'
     pic = 'https://i.postimg.cc/g2m0Ngj7/book.jpg'
     bot.send_photo(message.chat.id, pic, greet, reply_markup=keyboard)
     user_id = str(message.from_user.id)
     if user_id not in user_data:
-        user_data[user_id] = {}
+        user_data[user_id] = {'result': False}
         save_to_json()
 
 
@@ -101,6 +105,8 @@ def starting(message):
                      'начать сначала' in message.text.lower())
 def start_test(message):
     load_from_json()
+    bot.send_chat_action(message.chat.id, action='typing')
+    time.sleep(1.5)
     user_id = str(message.from_user.id)
     if user_id not in user_data:  # на случай, если файл с данными пользователей удален.
         user_data[user_id] = {}
@@ -138,7 +144,7 @@ def make_params_to_start(message):  # так как параметров выш�
     user_data[user_id] = {'question_number': 1,
                           'values': {'oblomov': 0, 'shtolz': 0, 'olga': 0, 'zakhar': 0},
                           'test_is_on': True,
-                          'result': True,
+                          'result': False,
                           'answers': {}}
     save_to_json()
 
@@ -152,6 +158,8 @@ def test(message):
     if not user:
         start_test(message)
         return
+    bot.send_chat_action(message.chat.id, action='typing')
+    time.sleep(1.5)
     question_number = user_data[user_id]['question_number']
     answers = []
     for key in questionnaire[str(question_number)].keys():  # сделано для авто-нахождения возможных вариантов ответа
@@ -195,7 +203,8 @@ def back_to_main_menu(message):
     if not user:
         start_test(message)
         return
-
+    bot.send_chat_action(message.chat.id, action='typing')
+    time.sleep(1)
     user_id = str(message.from_user.id)
     keyboard = check_main_menu_keyboard(message)
     bot.send_message(message.chat.id, 'Что вам угодно?', reply_markup=keyboard)
@@ -211,6 +220,8 @@ def question_before(message):
     if not user:
         start_test(message)
         return
+    bot.send_chat_action(message.chat.id, action='typing')
+    time.sleep(1.5)
     question_number = user_data[user_id]['question_number']
     if user_data[user_id]['test_is_on']:
         if question_number != 1:
@@ -236,6 +247,8 @@ def carry_on(message):
     if not user:
         start_test(message)
         return
+    bot.send_chat_action(message.chat.id, action='typing')
+    time.sleep(1.5)
     user_id = str(message.from_user.id)
     question_number = user_data[user_id]['question_number']
     user_data[user_id]['test_is_on'] = True
@@ -256,6 +269,10 @@ def say_result(message):
         start_test(message)
         return
     if user_data[user_id]['result']:
+        bot.send_chat_action(message.chat.id, action='typing')
+        time.sleep(3)
+        bot.send_chat_action(message.chat.id, action='upload_photo')
+        time.sleep(2)
         result = []
         values = user_data[user_id]['values']
         max_value = max(values.values())
@@ -264,7 +281,7 @@ def say_result(message):
                 result.append(key)
         if len(result) == 1:
             pic, text = find_result(user_data, user_id, result)
-            bot.send_photo(user_id, pic, text, reply_markup=check_main_menu_keyboard(message))
+            bot.send_photo(user_id, pic, text, reply_markup=None)
         else:
             text = find_result(user_data, user_id, result)
             bot.send_message(user_id, text, reply_markup=check_main_menu_keyboard(message))
@@ -275,6 +292,8 @@ def say_result(message):
 
 @bot.message_handler(content_types=['text', 'voice', 'photo', 'audio'])
 def answer_to_all(message):
+    bot.send_chat_action(message.chat.id, action='typing')
+    time.sleep(1.5)
     bot.send_message(message.chat.id, 'Я пока не знаю, как работать с такой формулировкой сообщения.\n'
                                       'Если хотите пройти мой тест, то смело жмите на кнопку "Начать тестирование" или,'
                                       ' если Вы уже проходили этот тест ранее, нажмите "Начать сначала"')
