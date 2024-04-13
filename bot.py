@@ -59,19 +59,19 @@ def farewell(message):
 
 
 # -----------------------------------------------------JSON-------------------------------------------------------------
-with open('/home/student/Oblomov_test_bot/my_questionnaire.json', 'r', encoding='utf8') as file:
+with open('my_questionnaire.json', 'r', encoding='utf8') as file:
     questionnaire = json.load(file)
 
 
 def save_to_json():
-    with open('/home/student/Oblomov_test_bot/user_data.json', 'w', encoding='utf8') as f:
+    with open('user_data.json', 'w', encoding='utf8') as f:
         json.dump(user_data, f, indent=2)
 
 
 def load_from_json():
     # noinspection PyBroadException
     try:
-        with open('/home/student/Oblomov_test_bot/user_data.json', 'r+', encoding='utf8') as f:
+        with open('user_data.json', 'r+', encoding='utf8') as f:
             data = json.load(f)
     except Exception:
         data = {}
