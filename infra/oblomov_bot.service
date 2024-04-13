@@ -1,0 +1,11 @@
+[Unit]
+Description=oblomov_bot for deploy
+After=multi-user.target
+[Service]
+Type=simple
+ExecStart=/home/student/Oblomov test/venv/bin/python3 /home/student/Oblomov test/bot.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
